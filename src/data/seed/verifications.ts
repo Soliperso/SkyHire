@@ -1,0 +1,48 @@
+import type { FaaVerification } from '../types'
+
+export const SEED_VERIFICATIONS: FaaVerification[] = [
+  {
+    id: 'ver-005',
+    pilotId: 'plt-005',
+    pilotName: 'Tom Alvarez',
+    certificateType: 'FAA Part 107 Remote Pilot',
+    certificateNumber: '4392001',
+    status: 'pending',
+    submittedAt: '2026-06-06',
+    verifiedAt: null,
+    expiresAt: '2028-06-01',
+  },
+  {
+    id: 'ver-007',
+    pilotId: 'plt-007',
+    pilotName: 'James Okoro',
+    certificateType: 'FAA Part 107 Remote Pilot',
+    certificateNumber: '5120433',
+    status: 'pending',
+    submittedAt: '2026-06-04',
+    verifiedAt: null,
+    expiresAt: '2027-11-15',
+  },
+  {
+    id: 'ver-001',
+    pilotId: 'plt-001',
+    pilotName: 'Marcus Reed',
+    certificateType: 'FAA Part 107 Remote Pilot',
+    certificateNumber: '3001882',
+    status: 'verified',
+    submittedAt: '2025-12-10',
+    verifiedAt: '2025-12-12',
+    expiresAt: '2027-12-10',
+  },
+  {
+    id: 'ver-002',
+    pilotId: 'plt-002',
+    pilotName: 'Elena Voss',
+    certificateType: 'FAA Part 107 + Thermography L1',
+    certificateNumber: '2887341',
+    status: 'verified',
+    submittedAt: '2025-11-02',
+    verifiedAt: '2025-11-04',
+    expiresAt: '2027-11-02',
+  },
+]

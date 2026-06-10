@@ -1,0 +1,40 @@
+import type { QuoteRequest } from '../types'
+
+export const SEED_QUOTES: QuoteRequest[] = [
+  {
+    id: 'qr-001',
+    pilotId: 'plt-001',
+    clientName: 'Avery Stone',
+    clientEmail: 'avery@stonerealty.com',
+    jobType: 'real-estate',
+    location: 'Austin, TX',
+    budgetRange: '$300 – $500',
+    details: '4,200 sq ft listing, need exterior aerials + twilight set by Friday.',
+    status: 'responded',
+    createdAt: '2026-06-07',
+  },
+  {
+    id: 'qr-002',
+    pilotId: 'plt-002',
+    clientName: 'Foothills Property Mgmt',
+    clientEmail: 'ops@foothillspm.com',
+    jobType: 'roof-inspection',
+    location: 'Boulder, CO',
+    budgetRange: '$250 – $400',
+    details: 'Suspected hail damage on 6-unit complex, need report for insurance claim.',
+    status: 'new',
+    createdAt: '2026-06-08',
+  },
+  {
+    id: 'qr-003',
+    pilotId: 'plt-004',
+    clientName: 'Harbor Events',
+    clientEmail: 'book@harborevents.co',
+    jobType: 'event-coverage',
+    location: 'Malibu, CA',
+    budgetRange: '$800 – $1,200',
+    details: 'Beach wedding, 3-hour coverage, highlight reel deliverable.',
+    status: 'new',
+    createdAt: '2026-06-09',
+  },
+]
