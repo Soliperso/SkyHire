@@ -1,4 +1,4 @@
-import type { Review } from '../types'
+import type { Review, ReviewStatus } from '../types'
 
 export interface NewReview {
   pilotId: string
@@ -14,4 +14,6 @@ export interface ReviewRepository {
   /** Reviews needing moderation (flagged/spam) — admin queue. */
   listFlagged(): Review[]
   add(review: NewReview): Review
+  /** Admin moderation decision (remove abusive/spam, or keep → publish). */
+  setStatus(id: string, status: ReviewStatus): void
 }

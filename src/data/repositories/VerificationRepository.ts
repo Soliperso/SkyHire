@@ -1,4 +1,4 @@
-import type { FaaVerification } from '../types'
+import type { FaaVerification, VerificationStatus } from '../types'
 
 export interface NewVerification {
   pilotId: string
@@ -16,4 +16,6 @@ export interface VerificationRepository {
   getForPilot(pilotId: string): FaaVerification | undefined
   /** Pilot submits certification details for review (status → pending). */
   submit(input: NewVerification): FaaVerification
+  /** Admin decision on a submission (approve/reject). Stamps verifiedAt on approval. Returns the updated record. */
+  setStatus(id: string, status: VerificationStatus): FaaVerification | undefined
 }

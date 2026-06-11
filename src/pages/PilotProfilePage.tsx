@@ -12,6 +12,7 @@ import { RatingStars } from '@/components/RatingStars'
 import { VerifiedBadge } from '@/components/VerifiedBadge'
 import { FastResponderBadge } from '@/components/FastResponderBadge'
 import { buttonStyles } from '@/components/Button'
+import { SaveButton } from '@/features/saved/SaveButton'
 import { Reveal } from '@/components/motion/Reveal'
 import { PortfolioGallery } from '@/features/pilots/PortfolioGallery'
 import { ReviewList } from '@/features/reviews/ReviewList'
@@ -124,9 +125,12 @@ export function PilotProfilePage() {
                 <Row label="Verification">{pilot.verificationStatus === 'verified' ? 'FAA verified' : 'Not verified'}</Row>
               </div>
 
-              <Link to={ROUTES.quote(pilot.id)} className={buttonStyles('primary', 'lg') + ' w-full'}>
-                Request a quote
-              </Link>
+              <div className="flex gap-2">
+                <Link to={ROUTES.quote(pilot.id)} className={buttonStyles('primary', 'lg') + ' flex-1'}>
+                  Request a quote
+                </Link>
+                <SaveButton pilotId={pilot.id} variant="plain" className="h-12 w-12 shrink-0" />
+              </div>
               <p className="mt-3 text-center text-caption text-ink-400">
                 Free to request · No obligation
               </p>

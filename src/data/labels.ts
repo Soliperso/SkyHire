@@ -3,6 +3,7 @@ import type {
   PricingModel,
   ReviewTag,
   Specialty,
+  UserStatus,
   VerificationStatus,
 } from './types'
 
@@ -52,6 +53,18 @@ export const SORT_LABELS: Record<PilotSort, string> = {
 }
 
 export const SORT_OPTIONS = Object.keys(SORT_LABELS) as PilotSort[]
+
+export const USER_STATUS_LABELS: Record<UserStatus, string> = {
+  active: 'Active',
+  flagged: 'Flagged',
+  suspended: 'Suspended',
+}
+
+export const ROLE_LABELS: Record<'client' | 'pilot' | 'admin', string> = {
+  client: 'Client',
+  pilot: 'Pilot',
+  admin: 'Admin',
+}
 
 /** Format a starting price + pricing model into a compact indicator (e.g. "$500/day"). */
 export function formatPrice(amount: number, model: PricingModel): string {

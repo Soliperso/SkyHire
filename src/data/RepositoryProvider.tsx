@@ -3,10 +3,14 @@ import type { PilotRepository } from './repositories/PilotRepository'
 import type { ReviewRepository } from './repositories/ReviewRepository'
 import type { QuoteRepository } from './repositories/QuoteRepository'
 import type { VerificationRepository } from './repositories/VerificationRepository'
+import type { UserRepository } from './repositories/UserRepository'
+import type { CategoryRepository } from './repositories/CategoryRepository'
 import {
+  createMockCategoryRepository,
   createMockPilotRepository,
   createMockQuoteRepository,
   createMockReviewRepository,
+  createMockUserRepository,
   createMockVerificationRepository,
 } from './repositories/mock/mockRepositories'
 
@@ -15,6 +19,8 @@ export interface Repositories {
   reviews: ReviewRepository
   quotes: QuoteRepository
   verifications: VerificationRepository
+  users: UserRepository
+  categories: CategoryRepository
 }
 
 const RepositoryContext = createContext<Repositories | null>(null)
@@ -32,6 +38,8 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
       reviews: createMockReviewRepository(),
       quotes: createMockQuoteRepository(),
       verifications: createMockVerificationRepository(),
+      users: createMockUserRepository(),
+      categories: createMockCategoryRepository(),
     }),
     [],
   )

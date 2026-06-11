@@ -10,6 +10,7 @@ const COLUMNS = [
     title: 'Discover',
     links: [
       { label: 'Browse pilots', to: ROUTES.browse() },
+      { label: 'Saved pilots', to: ROUTES.saved() },
       { label: 'Reviews', to: ROUTES.reviews() },
       { label: 'How it works', to: ROUTES.howItWorks() },
     ],

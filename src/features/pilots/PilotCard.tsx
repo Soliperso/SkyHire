@@ -9,6 +9,7 @@ import { Tag } from '@/components/Tag'
 import { RatingStars } from '@/components/RatingStars'
 import { VerifiedBadge } from '@/components/VerifiedBadge'
 import { FastResponderBadge } from '@/components/FastResponderBadge'
+import { SaveButton } from '@/features/saved/SaveButton'
 import { cn } from '@/lib/cn'
 
 /**
@@ -39,8 +40,10 @@ export function PilotCard({
     <Card
       variant={dark ? 'elevated' : 'solid'}
       interactive
-      className="group flex h-full flex-col overflow-hidden"
+      className="group relative flex h-full flex-col overflow-hidden"
     >
+      <SaveButton pilotId={pilot.id} variant="overlay" className="absolute left-3 top-3 z-20" />
+
       {/* Cover image */}
       <Link to={ROUTES.pilot(pilot.id)} className="relative block aspect-[16/10] overflow-hidden">
         <img
@@ -53,13 +56,17 @@ export function PilotCard({
         <div className="absolute right-3 top-3">
           <VerifiedBadge status={pilot.verificationStatus} />
         </div>
-        {pilot.available && (
-          <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-caption font-semibold text-verified-700 backdrop-blur">
-            <span className="h-1.5 w-1.5 rounded-full bg-verified-500" />
-            Available now
-          </span>
-        )}
-        <FastResponderBadge hours={pilot.responseTimeHours} variant="overlay" className="absolute bottom-3 left-3" />
+        {/* Trust pills stack at bottom-right so they never collide with the
+            avatar that overlaps the cover at bottom-left. */}
+        <div className="absolute bottom-3 right-3 flex flex-col items-end gap-1.5">
+          <FastResponderBadge hours={pilot.responseTimeHours} variant="overlay" />
+          {pilot.available && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-caption font-semibold text-verified-700 backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-verified-500" />
+              Available now
+            </span>
+          )}
+        </div>
       </Link>
 
       <div className="relative z-10 flex flex-1 flex-col p-5">

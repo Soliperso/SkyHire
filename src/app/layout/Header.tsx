@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { List, X, SignOut } from '@phosphor-icons/react'
 import { useAuth } from '@/auth/AuthProvider'
+import { useSavedPilots } from '@/saved/SavedPilotsProvider'
 import { homeForRole } from '@/auth/accounts'
 import { ROUTES } from '@/routes'
 import { Logo } from '@/components/Logo'
@@ -14,6 +15,7 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false)
   const { pathname } = useLocation()
   const { user, signOut } = useAuth()
+  const { count: savedCount } = useSavedPilots()
   const navigate = useNavigate()
 
   // Nav adapts to role: admins get the console link; pilots get their dashboard.
@@ -21,6 +23,7 @@ export function Header() {
     { label: 'Browse pilots', to: ROUTES.browse() },
     { label: 'How it works', to: ROUTES.howItWorks() },
     { label: 'Pricing', to: ROUTES.pricing() },
+    { label: savedCount > 0 ? `Saved (${savedCount})` : 'Saved', to: ROUTES.saved() },
     ...(user?.role === 'admin' ? [{ label: 'Admin', to: ROUTES.admin() }] : []),
     ...(user?.role === 'pilot' ? [{ label: 'Dashboard', to: ROUTES.dashboard() }] : []),
   ]

@@ -6,7 +6,8 @@
  */
 
 export type Role = 'client' | 'pilot' | 'admin'
-export type UserStatus = 'active' | 'suspended'
+/** `flagged` = surfaced by fraud monitoring but not yet actioned; `suspended` = access revoked. */
+export type UserStatus = 'active' | 'flagged' | 'suspended'
 
 export type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected'
 
@@ -40,6 +41,15 @@ export interface User {
   role: Role
   status: UserStatus
   createdAt: string
+  /** Why fraud monitoring surfaced this account, when status !== 'active'. */
+  flagReason?: string
+}
+
+/** A marketplace taxonomy entry — the admin-managed list behind specialty filters (PRD §8.6). */
+export interface Category {
+  slug: string
+  label: string
+  active: boolean
 }
 
 export interface PortfolioItem {

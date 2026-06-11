@@ -18,5 +18,10 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Provider + its hook are intentionally colocated (idiomatic React). This
+      // is an HMR-only hint, not a correctness rule — keep it advisory.
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    },
   },
 ])

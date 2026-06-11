@@ -1,32 +1,47 @@
+import { lazy } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { RepositoryProvider } from '@/data/RepositoryProvider'
 import { AuthProvider } from '@/auth/AuthProvider'
 import { RequireRole } from '@/auth/RequireRole'
+import { SavedPilotsProvider } from '@/saved/SavedPilotsProvider'
 import { ROUTE_PATTERNS } from '@/routes'
 import { RootLayout } from '@/app/layout/RootLayout'
 import { DashboardLayout } from '@/app/layout/DashboardLayout'
-import { HomePage } from '@/pages/HomePage'
-import { BrowsePage } from '@/pages/BrowsePage'
-import { PilotProfilePage } from '@/pages/PilotProfilePage'
-import { QuoteRequestPage } from '@/pages/QuoteRequestPage'
-import { ReviewsPage } from '@/pages/ReviewsPage'
-import { LoginPage } from '@/pages/LoginPage'
-import { HowItWorksPage } from '@/pages/HowItWorksPage'
-import { TrustSafetyPage } from '@/pages/TrustSafetyPage'
-import { PricingPage } from '@/pages/PricingPage'
-import { FaqPage } from '@/pages/FaqPage'
-import { ContactPage } from '@/pages/ContactPage'
-import { TermsPage } from '@/pages/TermsPage'
-import { PrivacyPage } from '@/pages/PrivacyPage'
-import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage'
-import { DashboardHomePage } from '@/pages/dashboard/DashboardHomePage'
-import { ProfileEditorPage } from '@/pages/dashboard/ProfileEditorPage'
-import { VerificationCenterPage } from '@/pages/dashboard/VerificationCenterPage'
-import { PortfolioManagerPage } from '@/pages/dashboard/PortfolioManagerPage'
-import { LeadsInboxPage } from '@/pages/dashboard/LeadsInboxPage'
-import { ReviewsDashboardPage } from '@/pages/dashboard/ReviewsDashboardPage'
-import { AvailabilityPage } from '@/pages/dashboard/AvailabilityPage'
-import { NotFoundPage } from '@/pages/NotFoundPage'
+import { AdminLayout } from '@/app/layout/AdminLayout'
+
+// Pages are code-split so the initial bundle only loads the landing route;
+// dashboard/admin/marketing chunks load on demand.
+const HomePage = lazy(() => import('@/pages/HomePage').then((m) => ({ default: m.HomePage })))
+const BrowsePage = lazy(() => import('@/pages/BrowsePage').then((m) => ({ default: m.BrowsePage })))
+const PilotProfilePage = lazy(() => import('@/pages/PilotProfilePage').then((m) => ({ default: m.PilotProfilePage })))
+const QuoteRequestPage = lazy(() => import('@/pages/QuoteRequestPage').then((m) => ({ default: m.QuoteRequestPage })))
+const ReviewsPage = lazy(() => import('@/pages/ReviewsPage').then((m) => ({ default: m.ReviewsPage })))
+const SavedPilotsPage = lazy(() => import('@/pages/SavedPilotsPage').then((m) => ({ default: m.SavedPilotsPage })))
+const LoginPage = lazy(() => import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })))
+const HowItWorksPage = lazy(() => import('@/pages/HowItWorksPage').then((m) => ({ default: m.HowItWorksPage })))
+const TrustSafetyPage = lazy(() => import('@/pages/TrustSafetyPage').then((m) => ({ default: m.TrustSafetyPage })))
+const PricingPage = lazy(() => import('@/pages/PricingPage').then((m) => ({ default: m.PricingPage })))
+const FaqPage = lazy(() => import('@/pages/FaqPage').then((m) => ({ default: m.FaqPage })))
+const ContactPage = lazy(() => import('@/pages/ContactPage').then((m) => ({ default: m.ContactPage })))
+const TermsPage = lazy(() => import('@/pages/TermsPage').then((m) => ({ default: m.TermsPage })))
+const PrivacyPage = lazy(() => import('@/pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage })))
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })))
+
+// Admin console
+const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })))
+const ListingsPage = lazy(() => import('@/pages/admin/ListingsPage').then((m) => ({ default: m.ListingsPage })))
+const UserManagementPage = lazy(() => import('@/pages/admin/UserManagementPage').then((m) => ({ default: m.UserManagementPage })))
+const CategoryManagementPage = lazy(() => import('@/pages/admin/CategoryManagementPage').then((m) => ({ default: m.CategoryManagementPage })))
+const FraudMonitoringPage = lazy(() => import('@/pages/admin/FraudMonitoringPage').then((m) => ({ default: m.FraudMonitoringPage })))
+
+// Pilot dashboard
+const DashboardHomePage = lazy(() => import('@/pages/dashboard/DashboardHomePage').then((m) => ({ default: m.DashboardHomePage })))
+const ProfileEditorPage = lazy(() => import('@/pages/dashboard/ProfileEditorPage').then((m) => ({ default: m.ProfileEditorPage })))
+const VerificationCenterPage = lazy(() => import('@/pages/dashboard/VerificationCenterPage').then((m) => ({ default: m.VerificationCenterPage })))
+const PortfolioManagerPage = lazy(() => import('@/pages/dashboard/PortfolioManagerPage').then((m) => ({ default: m.PortfolioManagerPage })))
+const LeadsInboxPage = lazy(() => import('@/pages/dashboard/LeadsInboxPage').then((m) => ({ default: m.LeadsInboxPage })))
+const ReviewsDashboardPage = lazy(() => import('@/pages/dashboard/ReviewsDashboardPage').then((m) => ({ default: m.ReviewsDashboardPage })))
+const AvailabilityPage = lazy(() => import('@/pages/dashboard/AvailabilityPage').then((m) => ({ default: m.AvailabilityPage })))
 
 const router = createBrowserRouter([
   {
@@ -37,6 +52,7 @@ const router = createBrowserRouter([
       { path: ROUTE_PATTERNS.pilot, element: <PilotProfilePage /> },
       { path: ROUTE_PATTERNS.quote, element: <QuoteRequestPage /> },
       { path: ROUTE_PATTERNS.reviews, element: <ReviewsPage /> },
+      { path: ROUTE_PATTERNS.saved, element: <SavedPilotsPage /> },
       { path: ROUTE_PATTERNS.login, element: <LoginPage /> },
 
       // Public / marketing pages.
@@ -48,10 +64,22 @@ const router = createBrowserRouter([
       { path: ROUTE_PATTERNS.terms, element: <TermsPage /> },
       { path: ROUTE_PATTERNS.privacy, element: <PrivacyPage /> },
 
-      // Admin — gated to the admin role.
+      // Admin console — gated to the admin role, nested under the admin shell.
       {
         element: <RequireRole role="admin" />,
-        children: [{ path: ROUTE_PATTERNS.admin, element: <AdminDashboardPage /> }],
+        children: [
+          {
+            path: ROUTE_PATTERNS.admin,
+            element: <AdminLayout />,
+            children: [
+              { index: true, element: <AdminDashboardPage /> },
+              { path: ROUTE_PATTERNS.adminListings, element: <ListingsPage /> },
+              { path: ROUTE_PATTERNS.adminUsers, element: <UserManagementPage /> },
+              { path: ROUTE_PATTERNS.adminCategories, element: <CategoryManagementPage /> },
+              { path: ROUTE_PATTERNS.adminFraud, element: <FraudMonitoringPage /> },
+            ],
+          },
+        ],
       },
 
       // Pilot dashboard — gated to the pilot role, nested under the dashboard shell.
@@ -82,9 +110,11 @@ const router = createBrowserRouter([
 export function App() {
   return (
     <AuthProvider>
-      <RepositoryProvider>
-        <RouterProvider router={router} />
-      </RepositoryProvider>
+      <SavedPilotsProvider>
+        <RepositoryProvider>
+          <RouterProvider router={router} />
+        </RepositoryProvider>
+      </SavedPilotsProvider>
     </AuthProvider>
   )
 }

@@ -6,6 +6,7 @@ import { Card } from '@/components/Card'
 import { Badge } from '@/components/Badge'
 import { useDashboard } from '@/app/layout/DashboardLayout'
 import { ProfileCompletion } from '@/features/dashboard/ProfileCompletion'
+import { PilotAnalytics } from '@/features/dashboard/PilotAnalytics'
 
 export function DashboardHomePage() {
   const { pilot } = useDashboard()
@@ -61,6 +62,8 @@ export function DashboardHomePage() {
           </Link>
         ))}
       </div>
+
+      <PilotAnalytics pilot={pilot} leads={leads} />
 
       <Card variant="elevated" className="p-6">
         <div className="mb-1 flex items-center justify-between">

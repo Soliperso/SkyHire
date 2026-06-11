@@ -1,22 +1,38 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SealCheck, Flag, Tray, ShieldWarning, Users } from '@phosphor-icons/react'
+import type { FaaVerification, Review } from '@/data/types'
 import { useRepositories } from '@/data/RepositoryProvider'
+import { SPECIALTY_LABELS } from '@/data/labels'
 import { ROUTES } from '@/routes'
-import { Container } from '@/components/Container'
 import { Card } from '@/components/Card'
 import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
 import { EmptyState } from '@/components/EmptyState'
 import { Reveal } from '@/components/motion/Reveal'
 import { Stagger } from '@/components/motion/Stagger'
+import { AdminTable, Tr, Td } from '@/features/admin/AdminTable'
 
 export function AdminDashboardPage() {
   const { pilots, reviews, quotes, verifications } = useRepositories()
 
-  const pending = verifications.listPending()
-  const flagged = reviews.listFlagged()
+  // Local mirrors so admin actions re-render (repos mutate in place).
+  const [pending, setPending] = useState<FaaVerification[]>(() => verifications.listPending())
+  const [flagged, setFlagged] = useState<Review[]>(() => reviews.listFlagged())
   const leads = quotes.list()
   const allPilots = pilots.list()
+
+  function decideVerification(v: FaaVerification, status: 'verified' | 'rejected') {
+    verifications.setStatus(v.id, status)
+    // Keep the pilot's public badge in sync with the decision.
+    pilots.update(v.pilotId, { verificationStatus: status })
+    setPending((prev) => prev.filter((p) => p.id !== v.id))
+  }
+
+  function moderateReview(r: Review, status: 'removed' | 'published') {
+    reviews.setStatus(r.id, status)
+    setFlagged((prev) => prev.filter((x) => x.id !== r.id))
+  }
 
   const stats = [
     { icon: ShieldWarning, label: 'Pending verifications', value: pending.length, tone: 'warning' as const },
@@ -26,14 +42,7 @@ export function AdminDashboardPage() {
   ]
 
   return (
-    <Container className="py-10">
-      <div className="mb-8">
-        <h1 className="text-h1 text-white">Admin console</h1>
-        <p className="mt-2 text-body text-ink-400">
-          Trust &amp; safety operations — verification, moderation, and lead monitoring.
-        </p>
-      </div>
-
+    <div className="space-y-10">
       {/* Stats */}
       <Stagger className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map(({ icon: Icon, label, value, tone }) => (
@@ -52,7 +61,7 @@ export function AdminDashboardPage() {
       </Stagger>
 
       {/* Verification queue */}
-      <section className="mt-10">
+      <section>
         <h2 className="mb-4 flex items-center gap-2 text-h2 text-white">
           <SealCheck weight="fill" className="h-6 w-6 text-verified-500" /> Verification queue
         </h2>
@@ -62,9 +71,9 @@ export function AdminDashboardPage() {
               <EmptyState title="Queue clear" description="No verification submissions awaiting review." />
             </div>
           ) : (
-            <Table head={['Pilot', 'Certificate', 'Submitted', 'Actions']}>
+            <AdminTable head={['Pilot', 'Certificate', 'Submitted', 'Actions']}>
               {pending.map((v) => (
-                <tr key={v.id} className="border-t border-white/10">
+                <Tr key={v.id}>
                   <Td>
                     <Link to={ROUTES.pilot(v.pilotId)} className="font-medium text-accent-300 hover:underline">
                       {v.pilotName}
@@ -77,19 +86,23 @@ export function AdminDashboardPage() {
                   <Td className="text-ink-400">{v.submittedAt}</Td>
                   <Td>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="primary">Approve</Button>
-                      <Button size="sm" variant="secondary">Reject</Button>
+                      <Button size="sm" variant="primary" onClick={() => decideVerification(v, 'verified')}>
+                        Approve
+                      </Button>
+                      <Button size="sm" variant="secondary" onClick={() => decideVerification(v, 'rejected')}>
+                        Reject
+                      </Button>
                     </div>
                   </Td>
-                </tr>
+                </Tr>
               ))}
-            </Table>
+            </AdminTable>
           )}
         </Card>
       </section>
 
       {/* Review moderation */}
-      <section className="mt-10">
+      <section>
         <h2 className="mb-4 flex items-center gap-2 text-h2 text-white">
           <Flag className="h-6 w-6 text-danger-600" /> Review moderation
         </h2>
@@ -99,9 +112,9 @@ export function AdminDashboardPage() {
               <EmptyState title="Nothing flagged" description="No reviews are awaiting moderation." />
             </div>
           ) : (
-            <Table head={['Review', 'Author', 'Actions']}>
+            <AdminTable head={['Review', 'Author', 'Actions']}>
               {flagged.map((r) => (
-                <tr key={r.id} className="border-t border-white/10">
+                <Tr key={r.id}>
                   <Td>
                     <p className="max-w-md text-ink-200">{r.text}</p>
                     <Badge tone="danger" className="mt-1.5">Flagged · spam</Badge>
@@ -109,61 +122,42 @@ export function AdminDashboardPage() {
                   <Td className="text-ink-400">{r.clientName}</Td>
                   <Td>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="danger">Remove</Button>
-                      <Button size="sm" variant="secondary">Keep</Button>
+                      <Button size="sm" variant="danger" onClick={() => moderateReview(r, 'removed')}>
+                        Remove
+                      </Button>
+                      <Button size="sm" variant="secondary" onClick={() => moderateReview(r, 'published')}>
+                        Keep
+                      </Button>
                     </div>
                   </Td>
-                </tr>
+                </Tr>
               ))}
-            </Table>
+            </AdminTable>
           )}
         </Card>
       </section>
 
       {/* Lead monitoring */}
-      <section className="mt-10">
+      <section>
         <h2 className="mb-4 flex items-center gap-2 text-h2 text-white">
           <Tray className="h-6 w-6 text-brand-400" /> Recent leads
         </h2>
         <Card variant="elevated" className="overflow-hidden">
-          <Table head={['Client', 'Service', 'Location', 'Budget', 'Status']}>
+          <AdminTable head={['Client', 'Service', 'Location', 'Budget', 'Status']}>
             {leads.map((q) => (
-              <tr key={q.id} className="border-t border-white/10">
+              <Tr key={q.id}>
                 <Td className="font-medium text-white">{q.clientName}</Td>
-                <Td className="text-ink-200">{q.jobType.replace('-', ' ')}</Td>
+                <Td className="text-ink-200">{SPECIALTY_LABELS[q.jobType]}</Td>
                 <Td className="text-ink-400">{q.location}</Td>
                 <Td className="text-ink-400">{q.budgetRange}</Td>
                 <Td>
                   <Badge tone={q.status === 'new' ? 'brand' : 'neutral'}>{q.status}</Badge>
                 </Td>
-              </tr>
+              </Tr>
             ))}
-          </Table>
+          </AdminTable>
         </Card>
       </section>
-    </Container>
-  )
-}
-
-function Table({ head, children }: { head: string[]; children: React.ReactNode }) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-body-sm">
-        <thead>
-          <tr className="bg-white/5">
-            {head.map((h) => (
-              <th key={h} className="px-5 py-3 font-semibold text-ink-300">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>{children}</tbody>
-      </table>
     </div>
   )
-}
-
-function Td({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-5 py-4 align-top ${className ?? ''}`}>{children}</td>
 }
