@@ -56,14 +56,14 @@ export function AvailabilityPage() {
             aria-checked={available}
             onClick={() => setAvailable((v) => !v)}
             className={cn(
-              'relative h-7 w-12 shrink-0 rounded-full transition-colors',
+              'inline-flex h-7 w-12 shrink-0 items-center rounded-full border-0 p-0.5 transition-colors',
               available ? 'bg-verified-500' : 'bg-white/15',
             )}
           >
             <span
               className={cn(
-                'absolute top-1 h-5 w-5 rounded-full bg-white transition-transform',
-                available ? 'translate-x-6' : 'translate-x-1',
+                'h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
+                available ? 'translate-x-6' : 'translate-x-0',
               )}
             />
           </button>
