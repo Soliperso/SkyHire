@@ -1,6 +1,6 @@
-import { useState } from 'react'
 import { MapPin, CurrencyDollar, EnvelopeSimple } from '@phosphor-icons/react'
-import type { QuoteRequest, QuoteStatus } from '@/data/types'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { QuoteStatus } from '@/data/types'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { SPECIALTY_LABELS } from '@/data/labels'
 import { Card } from '@/components/Card'
@@ -18,12 +18,20 @@ const STATUS_TONE: Record<QuoteStatus, BadgeTone> = {
 export function LeadsInboxPage() {
   const { pilot } = useDashboard()
   const { quotes } = useRepositories()
-  // Local mirror so status actions re-render (repo mutates in place).
-  const [leads, setLeads] = useState<QuoteRequest[]>(() => quotes.listForPilot(pilot.id))
+  const queryClient = useQueryClient()
+
+  const { data: leads = [] } = useQuery({
+    queryKey: ['quotes', 'pilot', pilot.id],
+    queryFn: () => quotes.listForPilot(pilot.id),
+  })
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: QuoteStatus }) => quotes.setStatus(id, status),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quotes', 'pilot', pilot.id] }),
+  })
 
   function setStatus(id: string, status: QuoteStatus) {
-    quotes.setStatus(id, status)
-    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status } : l)))
+    statusMutation.mutate({ id, status })
   }
 
   return (

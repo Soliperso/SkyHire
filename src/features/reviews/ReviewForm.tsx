@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import type { ReviewTag } from '@/data/types'
 import { REVIEW_TAGS, REVIEW_TAG_LABELS } from '@/data/labels'
 import { useRepositories } from '@/data/RepositoryProvider'
@@ -25,17 +26,24 @@ export function ReviewForm({
   const toggleTag = (tag: ReviewTag) =>
     setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
 
+  const mutation = useMutation({
+    mutationFn: () => reviews.add({ pilotId, clientName: name.trim(), rating, text: text.trim(), tags }),
+    onSuccess: () => {
+      setRating(0)
+      setName('')
+      setText('')
+      setTags([])
+      onSubmitted?.()
+    },
+    onError: () => setError('Something went wrong submitting your review. Please try again.'),
+  })
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (rating === 0) return setError('Please select a star rating.')
     if (!name.trim() || !text.trim()) return setError('Please add your name and a short review.')
     setError(null)
-    reviews.add({ pilotId, clientName: name.trim(), rating, text: text.trim(), tags })
-    setRating(0)
-    setName('')
-    setText('')
-    setTags([])
-    onSubmitted?.()
+    mutation.mutate()
   }
 
   return (
@@ -85,8 +93,8 @@ export function ReviewForm({
 
       {error && <p className="text-body-sm font-medium text-danger-600">{error}</p>}
 
-      <Button type="submit" size="md">
-        Submit review
+      <Button type="submit" size="md" disabled={mutation.isPending}>
+        {mutation.isPending ? 'Submitting…' : 'Submit review'}
       </Button>
     </form>
   )

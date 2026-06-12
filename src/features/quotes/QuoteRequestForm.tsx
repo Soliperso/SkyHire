@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import type { PilotProfile, Specialty } from '@/data/types'
 import { SPECIALTIES, SPECIALTY_LABELS } from '@/data/labels'
 import { useRepositories } from '@/data/RepositoryProvider'
@@ -34,14 +35,19 @@ export function QuoteRequestForm({
 
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }))
 
+  const mutation = useMutation({
+    mutationFn: () => quotes.add({ pilotId: pilot.id, ...form }),
+    onSuccess: () => onSubmitted(),
+    onError: () => setError('Something went wrong sending your request. Please try again.'),
+  })
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.clientName.trim() || !form.clientEmail.trim() || !form.details.trim()) {
       return setError('Please fill in your name, email, and job details.')
     }
     setError(null)
-    quotes.add({ pilotId: pilot.id, ...form })
-    onSubmitted()
+    mutation.mutate()
   }
 
   return (
@@ -91,8 +97,8 @@ export function QuoteRequestForm({
 
       {error && <p className="text-body-sm font-medium text-danger-600">{error}</p>}
 
-      <Button type="submit" size="lg" className="w-full">
-        Send quote request
+      <Button type="submit" size="lg" className="w-full" disabled={mutation.isPending}>
+        {mutation.isPending ? 'Sending…' : 'Send quote request'}
       </Button>
       <p className="text-center text-caption text-ink-400">
         No spam. Your details are shared only with {pilot.businessName}.

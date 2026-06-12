@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { SealCheck, ShieldCheck, Clock } from '@phosphor-icons/react'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { VERIFICATION_LABELS } from '@/data/labels'
 import { Card } from '@/components/Card'
@@ -13,7 +14,10 @@ export function VerificationCenterPage() {
   const { pilot, refresh } = useDashboard()
   const { verifications, pilots } = useRepositories()
 
-  const record = verifications.getForPilot(pilot.id)
+  const { data: record } = useQuery({
+    queryKey: ['verifications', 'pilot', pilot.id],
+    queryFn: () => verifications.getForPilot(pilot.id),
+  })
   const status = pilot.verificationStatus
 
   const [form, setForm] = useState({
@@ -22,18 +26,24 @@ export function VerificationCenterPage() {
     expiresAt: '',
   })
 
+  const mutation = useMutation({
+    mutationFn: async () => {
+      await verifications.submit({
+        pilotId: pilot.id,
+        pilotName: pilot.name,
+        certificateType: form.certificateType,
+        certificateNumber: form.certificateNumber,
+        expiresAt: form.expiresAt || null,
+      })
+      // Reflect the pending state on the public profile immediately.
+      await pilots.update(pilot.id, { verificationStatus: 'pending' })
+    },
+    onSuccess: () => refresh(),
+  })
+
   function onSubmit(e: FormEvent) {
     e.preventDefault()
-    verifications.submit({
-      pilotId: pilot.id,
-      pilotName: pilot.name,
-      certificateType: form.certificateType,
-      certificateNumber: form.certificateNumber,
-      expiresAt: form.expiresAt || null,
-    })
-    // Reflect the pending state on the public profile immediately.
-    pilots.update(pilot.id, { verificationStatus: 'pending' })
-    refresh()
+    mutation.mutate()
   }
 
   return (
@@ -107,7 +117,9 @@ export function VerificationCenterPage() {
                 onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
               />
             </div>
-            <Button type="submit" variant="primary">Submit for review</Button>
+            <Button type="submit" variant="primary" disabled={mutation.isPending}>
+              {mutation.isPending ? 'Submitting…' : 'Submit for review'}
+            </Button>
           </form>
         </Card>
       )}

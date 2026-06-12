@@ -25,10 +25,10 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  function attempt(withEmail: string) {
-    const user = signIn(withEmail)
+  function attempt(withEmail: string, withPassword?: string) {
+    const user = signIn(withEmail, withPassword)
     if (!user) {
-      setError('No account matches that email. Try a demo account below.')
+      setError("We couldn't sign you in. Check your email and password, or try a demo account below.")
       return
     }
     setError(null)
@@ -38,7 +38,7 @@ export function LoginPage() {
 
   function onSubmit(e: FormEvent) {
     e.preventDefault()
-    attempt(email)
+    attempt(email, password)
   }
 
   return (
@@ -68,7 +68,7 @@ export function LoginPage() {
               type="password"
               autoComplete="current-password"
               placeholder="••••••••"
-              hint="Demo mode — any password works."
+              hint="Demo accounts: any password. Admin: enter your passcode."
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />

@@ -5,8 +5,13 @@ const STORAGE_KEY = 'skyhire.auth'
 
 interface AuthContextValue {
   user: AuthUser | null
-  /** Mock sign-in: any password, email must match a demo account. Returns the user or null. */
-  signIn: (email: string) => AuthUser | null
+  /**
+   * Mock sign-in. Pilot/client demo accounts accept any password; the admin
+   * account additionally requires the secret VITE_ADMIN_PASSCODE so the console
+   * is restricted to the operator. Returns the user, or null if no account
+   * matches or the admin passcode is wrong/unset.
+   */
+  signIn: (email: string, password?: string) => AuthUser | null
   signOut: () => void
 }
 
@@ -29,9 +34,16 @@ function readStored(): AuthUser | null {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(readStored)
 
-  const signIn = useCallback((email: string) => {
+  const signIn = useCallback((email: string, password?: string) => {
     const account = findAccountByEmail(email)
     if (!account) return null
+    // The admin console is operator-only: gate it behind a shared passcode.
+    // (Real role-enforcing auth is the deferred follow-up; this is the lock
+    // available while sign-in is still the mock/localStorage layer.)
+    if (account.role === 'admin') {
+      const passcode = import.meta.env.VITE_ADMIN_PASSCODE as string | undefined
+      if (!passcode || password !== passcode) return null
+    }
     setUser(account)
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(account))

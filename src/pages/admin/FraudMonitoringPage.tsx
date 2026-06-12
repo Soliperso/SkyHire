@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ShieldWarning, Flag, Prohibit, Warning } from '@phosphor-icons/react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { BadgeTone } from '@/components/Badge'
 import type { User, UserStatus } from '@/data/types'
 import { useRepositories } from '@/data/RepositoryProvider'
@@ -21,14 +21,20 @@ const STATUS_TONE: Record<UserStatus, BadgeTone> = {
 /** Suspicious-account monitoring + review-spam signals (PRD §8.6 / §12). */
 export function FraudMonitoringPage() {
   const { users, reviews } = useRepositories()
-  const [version, setVersion] = useState(0)
+  const queryClient = useQueryClient()
 
-  const flaggedAccounts = useMemo(() => {
-    void version
-    return users.list().filter((u) => u.status !== 'active')
-  }, [users, version])
+  const { data: allUsers = [] } = useQuery({ queryKey: ['users'], queryFn: () => users.list() })
+  const flaggedAccounts = allUsers.filter((u) => u.status !== 'active')
 
-  const spamReviews = useMemo(() => reviews.listFlagged(), [reviews])
+  const { data: spamReviews = [] } = useQuery({
+    queryKey: ['reviews', 'flagged'],
+    queryFn: () => reviews.listFlagged(),
+  })
+
+  const statusMutation = useMutation({
+    mutationFn: ({ u, status }: { u: User; status: UserStatus }) => users.setStatus(u.id, status),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['users'] }),
+  })
 
   const stats = [
     { icon: Flag, label: 'Flagged accounts', value: flaggedAccounts.filter((u) => u.status === 'flagged').length, tone: 'warning' as const },
@@ -37,8 +43,7 @@ export function FraudMonitoringPage() {
   ]
 
   function setStatus(u: User, status: UserStatus) {
-    users.setStatus(u.id, status)
-    setVersion((v) => v + 1)
+    statusMutation.mutate({ u, status })
   }
 
   return (

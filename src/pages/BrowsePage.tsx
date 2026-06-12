@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import type { PilotFilters, PilotSort, Specialty } from '@/data/types'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { Container } from '@/components/Container'
@@ -26,14 +27,19 @@ export function BrowsePage() {
   }))
   const [sort, setSort] = useState<PilotSort>('relevance')
 
-  const results = useMemo(() => pilots.list(filters, sort), [pilots, filters, sort])
+  const { data: results = [], isPending } = useQuery({
+    queryKey: ['pilots', 'list', filters, sort],
+    queryFn: () => pilots.list(filters, sort),
+  })
 
   return (
     <Container className="py-10">
       <div className="mb-8">
         <h1 className="text-h1 text-white">Browse drone pilots</h1>
         <p className="mt-2 text-body text-ink-400">
-          {results.length} pilot{results.length === 1 ? '' : 's'} matching your criteria.
+          {isPending
+            ? 'Finding pilots…'
+            : `${results.length} pilot${results.length === 1 ? '' : 's'} matching your criteria.`}
         </p>
       </div>
 
@@ -47,7 +53,7 @@ export function BrowsePage() {
             <SortControl value={sort} onChange={setSort} />
           </div>
 
-          {results.length === 0 ? (
+          {isPending ? null : results.length === 0 ? (
             <EmptyState
               title="No pilots match these filters"
               description="Try widening your location radius or clearing the verified-only filter."

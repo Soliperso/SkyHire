@@ -1,5 +1,6 @@
 import { lazy } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RepositoryProvider } from '@/data/RepositoryProvider'
 import { AuthProvider } from '@/auth/AuthProvider'
 import { RequireRole } from '@/auth/RequireRole'
@@ -17,6 +18,7 @@ const PilotProfilePage = lazy(() => import('@/pages/PilotProfilePage').then((m) 
 const QuoteRequestPage = lazy(() => import('@/pages/QuoteRequestPage').then((m) => ({ default: m.QuoteRequestPage })))
 const ReviewsPage = lazy(() => import('@/pages/ReviewsPage').then((m) => ({ default: m.ReviewsPage })))
 const SavedPilotsPage = lazy(() => import('@/pages/SavedPilotsPage').then((m) => ({ default: m.SavedPilotsPage })))
+const JobHistoryPage = lazy(() => import('@/pages/JobHistoryPage').then((m) => ({ default: m.JobHistoryPage })))
 const LoginPage = lazy(() => import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })))
 const HowItWorksPage = lazy(() => import('@/pages/HowItWorksPage').then((m) => ({ default: m.HowItWorksPage })))
 const TrustSafetyPage = lazy(() => import('@/pages/TrustSafetyPage').then((m) => ({ default: m.TrustSafetyPage })))
@@ -82,6 +84,12 @@ const router = createBrowserRouter([
         ],
       },
 
+      // Client account — gated to the signed-in client (needs their email for job history).
+      {
+        element: <RequireRole role="client" />,
+        children: [{ path: ROUTE_PATTERNS.jobHistory, element: <JobHistoryPage /> }],
+      },
+
       // Pilot dashboard — gated to the pilot role, nested under the dashboard shell.
       {
         element: <RequireRole role="pilot" />,
@@ -107,14 +115,23 @@ const router = createBrowserRouter([
   },
 ])
 
+// One shared QueryClient for the app. Data is treated as fresh for a short
+// window so navigating back to a list doesn't refetch on every mount, while
+// mutations explicitly invalidate the queries they affect.
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } },
+})
+
 export function App() {
   return (
     <AuthProvider>
-      <SavedPilotsProvider>
-        <RepositoryProvider>
-          <RouterProvider router={router} />
-        </RepositoryProvider>
-      </SavedPilotsProvider>
+      <QueryClientProvider client={queryClient}>
+        <SavedPilotsProvider>
+          <RepositoryProvider>
+            <RouterProvider router={router} />
+          </RepositoryProvider>
+        </SavedPilotsProvider>
+      </QueryClientProvider>
     </AuthProvider>
   )
 }

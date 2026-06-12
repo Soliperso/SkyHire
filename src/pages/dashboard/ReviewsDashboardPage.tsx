@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { Card } from '@/components/Card'
 import { RatingStars } from '@/components/RatingStars'
@@ -7,7 +8,10 @@ import { ReviewList } from '@/features/reviews/ReviewList'
 export function ReviewsDashboardPage() {
   const { pilot } = useDashboard()
   const { reviews } = useRepositories()
-  const pilotReviews = reviews.listForPilot(pilot.id)
+  const { data: pilotReviews = [] } = useQuery({
+    queryKey: ['reviews', 'pilot', pilot.id],
+    queryFn: () => reviews.listForPilot(pilot.id),
+  })
 
   // Star distribution (5→1) across this pilot's published reviews.
   const dist = [5, 4, 3, 2, 1].map((star) => ({

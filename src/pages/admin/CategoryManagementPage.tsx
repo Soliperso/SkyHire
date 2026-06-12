@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { Plus, Trash } from '@phosphor-icons/react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Category, Specialty } from '@/data/types'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { Card } from '@/components/Card'
@@ -11,43 +12,49 @@ import { AdminTable, Tr, Td } from '@/features/admin/AdminTable'
 /** Marketplace taxonomy management (PRD §8.6 — category management). */
 export function CategoryManagementPage() {
   const { categories, pilots } = useRepositories()
-  const [version, setVersion] = useState(0)
+  const queryClient = useQueryClient()
   const [label, setLabel] = useState('')
 
-  const rows = useMemo(() => {
-    void version
-    return categories.list()
-  }, [categories, version])
+  const { data: rows = [] } = useQuery({ queryKey: ['categories'], queryFn: () => categories.list() })
+  const { data: allPilots = [] } = useQuery({
+    queryKey: ['pilots', 'list', 'all'],
+    queryFn: () => pilots.list(),
+  })
 
   // How many pilots list each category — informs whether it's safe to retire.
   const counts = useMemo(() => {
-    const all = pilots.list()
     const map: Record<string, number> = {}
     for (const c of rows) {
-      map[c.slug] = all.filter((p) => p.specialties.includes(c.slug as Specialty)).length
+      map[c.slug] = allPilots.filter((p) => p.specialties.includes(c.slug as Specialty)).length
     }
     return map
-  }, [pilots, rows])
+  }, [allPilots, rows])
 
-  const bump = () => setVersion((v) => v + 1)
+  const invalidate = () => void queryClient.invalidateQueries({ queryKey: ['categories'] })
+  const addMutation = useMutation({ mutationFn: (l: string) => categories.add(l), onSuccess: invalidate })
+  const toggleMutation = useMutation({
+    mutationFn: (c: Category) => categories.setActive(c.slug, !c.active),
+    onSuccess: invalidate,
+  })
+  const removeMutation = useMutation({
+    mutationFn: (c: Category) => categories.remove(c.slug),
+    onSuccess: invalidate,
+  })
 
   function addCategory(e: FormEvent) {
     e.preventDefault()
     const trimmed = label.trim()
     if (!trimmed) return
-    categories.add(trimmed)
+    addMutation.mutate(trimmed)
     setLabel('')
-    bump()
   }
 
   function toggleActive(c: Category) {
-    categories.setActive(c.slug, !c.active)
-    bump()
+    toggleMutation.mutate(c)
   }
 
   function remove(c: Category) {
-    categories.remove(c.slug)
-    bump()
+    removeMutation.mutate(c)
   }
 
   return (

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { Card } from '@/components/Card'
 import { Button } from '@/components/Button'
@@ -16,15 +17,22 @@ export function AvailabilityPage() {
   const [serviceAreaMiles, setServiceArea] = useState(pilot.serviceAreaMiles)
   const [responseTimeHours, setResponseTime] = useState(pilot.responseTimeHours)
 
+  const mutation = useMutation({
+    mutationFn: () =>
+      pilots.update(pilot.id, {
+        available,
+        serviceAreaMiles: Number(serviceAreaMiles) || 0,
+        responseTimeHours: Number(responseTimeHours) || 0,
+      }),
+    onSuccess: () => {
+      refresh()
+      markSaved()
+    },
+  })
+
   function onSubmit(e: FormEvent) {
     e.preventDefault()
-    pilots.update(pilot.id, {
-      available,
-      serviceAreaMiles: Number(serviceAreaMiles) || 0,
-      responseTimeHours: Number(responseTimeHours) || 0,
-    })
-    refresh()
-    markSaved()
+    mutation.mutate()
   }
 
   return (
@@ -81,7 +89,9 @@ export function AvailabilityPage() {
       </Card>
 
       <div className="flex items-center gap-4">
-        <Button type="submit" variant="primary">Save changes</Button>
+        <Button type="submit" variant="primary" disabled={mutation.isPending}>
+          {mutation.isPending ? 'Saving…' : 'Save changes'}
+        </Button>
         <SavedBanner show={saved} />
       </div>
     </form>

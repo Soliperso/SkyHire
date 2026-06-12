@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
   ArrowRight,
   CaretDown,
@@ -62,7 +63,10 @@ const TRUST_STEPS = [
 
 export function HomePage() {
   const { pilots } = useRepositories()
-  const featured = pilots.featured(3)
+  const { data: featured = [] } = useQuery({
+    queryKey: ['pilots', 'featured', 3],
+    queryFn: () => pilots.featured(3),
+  })
   const navigate = useNavigate()
 
   const [location, setLocation] = useState('')
