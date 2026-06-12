@@ -20,10 +20,10 @@ export function getSupabaseClient(): SupabaseClient {
     throw new Error('Supabase env is not configured (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)')
   }
   if (!client) {
-    // Mock auth still owns sessions this phase, so we don't persist a Supabase
-    // session — every request uses the anon key.
+    // Real Supabase Auth owns sessions: persist + refresh so the signed-in
+    // user's JWT is attached to every request (RLS keys off auth.uid()).
     client = createClient(url as string, anonKey as string, {
-      auth: { persistSession: false, autoRefreshToken: false },
+      auth: { persistSession: true, autoRefreshToken: true },
     })
   }
   return client

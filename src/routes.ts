@@ -17,6 +17,7 @@ export const ROUTES = {
   adminCategories: () => '/admin/categories',
   adminFraud: () => '/admin/fraud',
   login: (from?: string) => (from ? `/login?from=${encodeURIComponent(from)}` : '/login'),
+  signup: () => '/signup',
   // Public / marketing pages.
   howItWorks: () => '/how-it-works',
   trustSafety: () => '/trust-safety',
@@ -50,6 +51,7 @@ export const ROUTE_PATTERNS = {
   adminCategories: '/admin/categories',
   adminFraud: '/admin/fraud',
   login: '/login',
+  signup: '/signup',
   howItWorks: '/how-it-works',
   trustSafety: '/trust-safety',
   pricing: '/pricing',

@@ -1,8 +1,11 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import type { ReviewTag } from '@/data/types'
 import { REVIEW_TAGS, REVIEW_TAG_LABELS } from '@/data/labels'
 import { useRepositories } from '@/data/RepositoryProvider'
+import { useAuth } from '@/auth/AuthProvider'
+import { ROUTES } from '@/routes'
 import { RatingStars } from '@/components/RatingStars'
 import { TextField, TextArea } from '@/components/fields'
 import { Button } from '@/components/Button'
@@ -17,8 +20,9 @@ export function ReviewForm({
   onSubmitted?: () => void
 }) {
   const { reviews } = useRepositories()
+  const { user } = useAuth()
   const [rating, setRating] = useState(0)
-  const [name, setName] = useState('')
+  const [name, setName] = useState(user?.name ?? '')
   const [text, setText] = useState('')
   const [tags, setTags] = useState<ReviewTag[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -44,6 +48,21 @@ export function ReviewForm({
     if (!name.trim() || !text.trim()) return setError('Please add your name and a short review.')
     setError(null)
     mutation.mutate()
+  }
+
+  // Reviews require a signed-in account (keeps reputation accountable).
+  if (!user) {
+    return (
+      <div className="rounded-xl border border-white/10 bg-white/5 p-5 text-center">
+        <p className="text-body-sm text-ink-300">Sign in to leave a review.</p>
+        <Link
+          to={ROUTES.login(ROUTES.reviews(pilotId))}
+          className="mt-3 inline-block font-semibold text-accent-300 hover:text-accent-200"
+        >
+          Sign in →
+        </Link>
+      </div>
+    )
   }
 
   return (

@@ -373,6 +373,10 @@ deno_version = 2
 [functions.notify-lead]
 verify_jwt = false
 
+# Public client signup (service-role create + auto-confirm). No caller JWT.
+[functions.signup]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

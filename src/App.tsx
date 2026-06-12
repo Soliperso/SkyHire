@@ -20,6 +20,7 @@ const ReviewsPage = lazy(() => import('@/pages/ReviewsPage').then((m) => ({ defa
 const SavedPilotsPage = lazy(() => import('@/pages/SavedPilotsPage').then((m) => ({ default: m.SavedPilotsPage })))
 const JobHistoryPage = lazy(() => import('@/pages/JobHistoryPage').then((m) => ({ default: m.JobHistoryPage })))
 const LoginPage = lazy(() => import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })))
+const SignupPage = lazy(() => import('@/pages/SignupPage').then((m) => ({ default: m.SignupPage })))
 const HowItWorksPage = lazy(() => import('@/pages/HowItWorksPage').then((m) => ({ default: m.HowItWorksPage })))
 const TrustSafetyPage = lazy(() => import('@/pages/TrustSafetyPage').then((m) => ({ default: m.TrustSafetyPage })))
 const PricingPage = lazy(() => import('@/pages/PricingPage').then((m) => ({ default: m.PricingPage })))
@@ -56,6 +57,7 @@ const router = createBrowserRouter([
       { path: ROUTE_PATTERNS.reviews, element: <ReviewsPage /> },
       { path: ROUTE_PATTERNS.saved, element: <SavedPilotsPage /> },
       { path: ROUTE_PATTERNS.login, element: <LoginPage /> },
+      { path: ROUTE_PATTERNS.signup, element: <SignupPage /> },
 
       // Public / marketing pages.
       { path: ROUTE_PATTERNS.howItWorks, element: <HowItWorksPage /> },

@@ -39,8 +39,8 @@ export function Header() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  function handleSignOut() {
-    signOut()
+  async function handleSignOut() {
+    await signOut()
     setOpen(false)
     navigate(ROUTES.home())
   }
