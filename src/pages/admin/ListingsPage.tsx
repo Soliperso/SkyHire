@@ -1,6 +1,6 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Star } from '@phosphor-icons/react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { PilotProfile } from '@/data/types'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { ROUTES } from '@/routes'
@@ -13,14 +13,19 @@ import { AdminTable, Tr, Td } from '@/features/admin/AdminTable'
 /** Listing management + featured-placement controls (PRD §8.6). */
 export function ListingsPage() {
   const { pilots } = useRepositories()
-  // Local mirror so the featured toggle re-renders (repo mutates in place).
-  const [rows, setRows] = useState<PilotProfile[]>(() => pilots.list())
+  const queryClient = useQueryClient()
+
+  const { data: rows = [] } = useQuery({ queryKey: ['pilots', 'list', 'all'], queryFn: () => pilots.list() })
 
   const featuredCount = rows.filter((p) => p.featured).length
 
+  const toggleMutation = useMutation({
+    mutationFn: (p: PilotProfile) => pilots.update(p.id, { featured: !p.featured }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['pilots'] }),
+  })
+
   function toggleFeatured(p: PilotProfile) {
-    pilots.update(p.id, { featured: !p.featured })
-    setRows((prev) => prev.map((x) => (x.id === p.id ? { ...x, featured: !x.featured } : x)))
+    toggleMutation.mutate(p)
   }
 
   return (

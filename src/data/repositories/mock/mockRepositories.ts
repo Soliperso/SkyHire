@@ -8,7 +8,6 @@ import type {
   Category,
   FaaVerification,
   PilotFilters,
-  PilotProfile,
   PilotSort,
   QuoteRequest,
   Review,
@@ -20,6 +19,12 @@ import type { NewQuoteRequest, QuoteRepository } from '../QuoteRepository'
 import type { NewVerification, VerificationRepository } from '../VerificationRepository'
 import type { UserRepository } from '../UserRepository'
 import type { CategoryRepository } from '../CategoryRepository'
+import { sortPilots } from '../sortPilots'
+
+// The mock repositories satisfy the (now async) repository interfaces so the app
+// still runs with zero backend — every method just resolves immediately. They
+// mutate in-memory copies of the seed data, so changes reset on a full reload.
+// The Supabase implementations persist for real; RepositoryProvider picks which.
 
 const uid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 8)}`
 const today = () => new Date().toISOString().slice(0, 10)
@@ -27,7 +32,7 @@ const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-'
 
 export function createMockPilotRepository(): PilotRepository {
   return {
-    list(filters: PilotFilters = {}, sort: PilotSort = 'relevance') {
+    async list(filters: PilotFilters = {}, sort: PilotSort = 'relevance') {
       let result = SEED_PILOTS.filter((p) => {
         if (filters.verifiedOnly && p.verificationStatus !== 'verified') return false
         if (filters.minRating && p.ratingAvg < filters.minRating) return false
@@ -50,15 +55,15 @@ export function createMockPilotRepository(): PilotRepository {
       return result
     },
 
-    getById(id) {
+    async getById(id) {
       return SEED_PILOTS.find((p) => p.id === id)
     },
 
-    featured(limit = 3) {
+    async featured(limit = 3) {
       return SEED_PILOTS.filter((p) => p.featured).slice(0, limit)
     },
 
-    update(id, patch) {
+    async update(id, patch) {
       const pilot = SEED_PILOTS.find((p) => p.id === id)
       if (!pilot) return undefined
       // Mutate in place so getById/list reflect the change for the session.
@@ -68,39 +73,19 @@ export function createMockPilotRepository(): PilotRepository {
   }
 }
 
-function sortPilots(pilots: PilotProfile[], sort: PilotSort): PilotProfile[] {
-  const copy = [...pilots]
-  switch (sort) {
-    case 'rating':
-      return copy.sort((a, b) => b.ratingAvg - a.ratingAvg || b.reviewCount - a.reviewCount)
-    case 'distance':
-      return copy.sort((a, b) => a.serviceAreaMiles - b.serviceAreaMiles)
-    case 'response-time':
-      return copy.sort((a, b) => a.responseTimeHours - b.responseTimeHours)
-    case 'relevance':
-    default:
-      // Relevance = verified first, then featured, then rating.
-      return copy.sort((a, b) => {
-        const score = (p: PilotProfile) =>
-          (p.verificationStatus === 'verified' ? 2 : 0) + (p.featured ? 1 : 0)
-        return score(b) - score(a) || b.ratingAvg - a.ratingAvg
-      })
-  }
-}
-
 export function createMockReviewRepository(): ReviewRepository {
   const reviews: Review[] = [...SEED_REVIEWS]
   return {
-    listForPilot(pilotId) {
+    async listForPilot(pilotId) {
       return reviews.filter((r) => r.pilotId === pilotId && r.status === 'published')
     },
-    listPublished() {
+    async listPublished() {
       return reviews.filter((r) => r.status === 'published')
     },
-    listFlagged() {
+    async listFlagged() {
       return reviews.filter((r) => r.status === 'flagged')
     },
-    add(input: NewReview) {
+    async add(input: NewReview) {
       const review: Review = {
         id: uid('rev'),
         status: 'published',
@@ -111,7 +96,7 @@ export function createMockReviewRepository(): ReviewRepository {
       reviews.unshift(review)
       return review
     },
-    setStatus(id, status) {
+    async setStatus(id, status) {
       const review = reviews.find((r) => r.id === id)
       if (review) review.status = status
     },
@@ -121,13 +106,17 @@ export function createMockReviewRepository(): ReviewRepository {
 export function createMockQuoteRepository(): QuoteRepository {
   const quotes: QuoteRequest[] = [...SEED_QUOTES]
   return {
-    list() {
+    async list() {
       return quotes
     },
-    listForPilot(pilotId) {
+    async listForPilot(pilotId) {
       return quotes.filter((q) => q.pilotId === pilotId)
     },
-    add(input: NewQuoteRequest) {
+    async listForClient(clientEmail) {
+      const email = clientEmail.toLowerCase().trim()
+      return quotes.filter((q) => q.clientEmail.toLowerCase() === email)
+    },
+    async add(input: NewQuoteRequest) {
       const quote: QuoteRequest = {
         id: uid('qr'),
         status: 'new',
@@ -137,7 +126,7 @@ export function createMockQuoteRepository(): QuoteRepository {
       quotes.unshift(quote)
       return quote
     },
-    setStatus(id, status) {
+    async setStatus(id, status) {
       const quote = quotes.find((q) => q.id === id)
       if (quote) quote.status = status
     },
@@ -147,19 +136,19 @@ export function createMockQuoteRepository(): QuoteRepository {
 export function createMockVerificationRepository(): VerificationRepository {
   const verifications: FaaVerification[] = [...SEED_VERIFICATIONS]
   return {
-    list() {
+    async list() {
       return verifications
     },
-    listPending() {
+    async listPending() {
       return verifications.filter((v) => v.status === 'pending')
     },
-    getForPilot(pilotId) {
+    async getForPilot(pilotId) {
       // Most recently submitted record wins if a pilot has more than one.
       return verifications
         .filter((v) => v.pilotId === pilotId)
         .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))[0]
     },
-    submit(input: NewVerification) {
+    async submit(input: NewVerification) {
       const record: FaaVerification = {
         id: uid('ver'),
         status: 'pending',
@@ -170,7 +159,7 @@ export function createMockVerificationRepository(): VerificationRepository {
       verifications.unshift(record)
       return record
     },
-    setStatus(id, status) {
+    async setStatus(id, status) {
       const record = verifications.find((v) => v.id === id)
       if (!record) return undefined
       record.status = status
@@ -183,13 +172,13 @@ export function createMockVerificationRepository(): VerificationRepository {
 export function createMockUserRepository(): UserRepository {
   const users: User[] = [...SEED_USERS]
   return {
-    list() {
+    async list() {
       return users
     },
-    getById(id) {
+    async getById(id) {
       return users.find((u) => u.id === id)
     },
-    setStatus(id, status, reason) {
+    async setStatus(id, status, reason) {
       const user = users.find((u) => u.id === id)
       if (!user) return undefined
       user.status = status
@@ -203,10 +192,10 @@ export function createMockUserRepository(): UserRepository {
 export function createMockCategoryRepository(): CategoryRepository {
   const categories: Category[] = [...SEED_CATEGORIES]
   return {
-    list() {
+    async list() {
       return categories
     },
-    add(label) {
+    async add(label) {
       const slug = slugify(label)
       const existing = categories.find((c) => c.slug === slug)
       if (existing) return existing
@@ -214,11 +203,11 @@ export function createMockCategoryRepository(): CategoryRepository {
       categories.push(category)
       return category
     },
-    setActive(slug, active) {
+    async setActive(slug, active) {
       const category = categories.find((c) => c.slug === slug)
       if (category) category.active = active
     },
-    remove(slug) {
+    async remove(slug) {
       const i = categories.findIndex((c) => c.slug === slug)
       if (i !== -1) categories.splice(i, 1)
     },

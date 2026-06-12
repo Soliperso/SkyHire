@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, CheckCircle } from '@phosphor-icons/react'
+import { useQuery } from '@tanstack/react-query'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { ROUTES } from '@/routes'
 import { Container } from '@/components/Container'
@@ -16,9 +17,16 @@ import { NotFoundPage } from './NotFoundPage'
 export function QuoteRequestPage() {
   const { id = '' } = useParams()
   const { pilots } = useRepositories()
-  const pilot = pilots.getById(id)
+  const { data: pilot, isPending } = useQuery({
+    queryKey: ['pilots', 'byId', id],
+    queryFn: () => pilots.getById(id),
+    enabled: Boolean(id),
+  })
   const [submitted, setSubmitted] = useState(false)
 
+  if (isPending) {
+    return <Container className="py-24 text-center text-body text-ink-400">Loading…</Container>
+  }
   if (!pilot) return <NotFoundPage />
 
   return (

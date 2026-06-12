@@ -1,4 +1,5 @@
 import { Quotes } from '@phosphor-icons/react'
+import { useQuery } from '@tanstack/react-query'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { Card } from '@/components/Card'
 import { RatingStars } from '@/components/RatingStars'
@@ -9,11 +10,19 @@ import { Stagger } from '@/components/motion/Stagger'
 export function Testimonials() {
   const { reviews, pilots } = useRepositories()
 
-  const items = reviews
-    .listPublished()
+  const { data: published = [] } = useQuery({
+    queryKey: ['reviews', 'published'],
+    queryFn: () => reviews.listPublished(),
+  })
+  const { data: allPilots = [] } = useQuery({
+    queryKey: ['pilots', 'list', 'all'],
+    queryFn: () => pilots.list(),
+  })
+
+  const items = published
     .filter((r) => r.rating === 5 && r.text.length < 180)
     .slice(0, 3)
-    .map((r) => ({ review: r, pilot: pilots.getById(r.pilotId) }))
+    .map((r) => ({ review: r, pilot: allPilots.find((p) => p.id === r.pilotId) }))
 
   if (items.length === 0) return null
 

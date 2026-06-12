@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { Container } from '@/components/Container'
 import { Card } from '@/components/Card'
@@ -13,18 +14,22 @@ import { ReviewForm } from '@/features/reviews/ReviewForm'
 export function ReviewsPage() {
   const { pilots, reviews } = useRepositories()
   const [params] = useSearchParams()
+  const queryClient = useQueryClient()
 
-  const allPilots = useMemo(() => pilots.list(), [pilots])
-  const [pilotId, setPilotId] = useState(params.get('pilot') ?? allPilots[0]?.id ?? '')
-  // Bump to recompute review lists after a submission (mock store mutates in place).
-  const [version, setVersion] = useState(0)
+  const { data: allPilots = [] } = useQuery({
+    queryKey: ['pilots', 'list', 'all'],
+    queryFn: () => pilots.list(),
+  })
+  const [pilotId, setPilotId] = useState(params.get('pilot') ?? '')
+  // Fall back to the first pilot once the list loads, if none is chosen yet.
+  const effectiveId = pilotId || allPilots[0]?.id || ''
 
-  const selected = pilots.getById(pilotId)
-  const listed = useMemo(
-    () => (selected ? reviews.listForPilot(selected.id) : []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [reviews, selected, version],
-  )
+  const selected = allPilots.find((p) => p.id === effectiveId)
+  const { data: listed = [] } = useQuery({
+    queryKey: ['reviews', 'pilot', effectiveId],
+    queryFn: () => reviews.listForPilot(effectiveId),
+    enabled: Boolean(effectiveId),
+  })
 
   return (
     <Container className="py-10">
@@ -42,7 +47,7 @@ export function ReviewsPage() {
             <div className="mb-4 max-w-xs">
               <SelectField
                 label="Choose a pilot"
-                value={pilotId}
+                value={effectiveId}
                 onChange={(e) => setPilotId(e.target.value)}
                 options={allPilots.map((p) => ({ value: p.id, label: p.businessName }))}
               />
@@ -69,7 +74,12 @@ export function ReviewsPage() {
             </p>
             <div className="mt-5">
               {selected && (
-                <ReviewForm pilotId={selected.id} onSubmitted={() => setVersion((v) => v + 1)} />
+                <ReviewForm
+                  pilotId={selected.id}
+                  onSubmitted={() =>
+                    queryClient.invalidateQueries({ queryKey: ['reviews', 'pilot', effectiveId] })
+                  }
+                />
               )}
             </div>
           </Card>

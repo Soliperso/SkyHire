@@ -13,6 +13,15 @@ import {
   createMockUserRepository,
   createMockVerificationRepository,
 } from './repositories/mock/mockRepositories'
+import {
+  createSupabaseCategoryRepository,
+  createSupabasePilotRepository,
+  createSupabaseQuoteRepository,
+  createSupabaseReviewRepository,
+  createSupabaseUserRepository,
+  createSupabaseVerificationRepository,
+} from './repositories/supabase/supabaseRepositories'
+import { getSupabaseClient, hasSupabaseEnv } from './supabase/client'
 
 export interface Repositories {
   pilots: PilotRepository
@@ -26,23 +35,34 @@ export interface Repositories {
 const RepositoryContext = createContext<Repositories | null>(null)
 
 /**
- * Wires concrete repository implementations into the app. Today these are the
- * in-memory mock implementations; to go live, build Supabase-backed classes
- * that satisfy the same interfaces and construct them here — nothing else in
- * the app changes.
+ * Wires concrete repository implementations into the app — the single "Supabase
+ * seam" swap point. When a Supabase backend is configured (VITE_SUPABASE_URL /
+ * VITE_SUPABASE_ANON_KEY), data persists for real; otherwise the in-memory mock
+ * implementations are used so the app still runs with no backend. The UI depends
+ * only on the repository interfaces, so nothing else changes either way.
  */
 export function RepositoryProvider({ children }: { children: ReactNode }) {
-  const repositories = useMemo<Repositories>(
-    () => ({
+  const repositories = useMemo<Repositories>(() => {
+    if (hasSupabaseEnv) {
+      const db = getSupabaseClient()
+      return {
+        pilots: createSupabasePilotRepository(db),
+        reviews: createSupabaseReviewRepository(db),
+        quotes: createSupabaseQuoteRepository(db),
+        verifications: createSupabaseVerificationRepository(db),
+        users: createSupabaseUserRepository(db),
+        categories: createSupabaseCategoryRepository(db),
+      }
+    }
+    return {
       pilots: createMockPilotRepository(),
       reviews: createMockReviewRepository(),
       quotes: createMockQuoteRepository(),
       verifications: createMockVerificationRepository(),
       users: createMockUserRepository(),
       categories: createMockCategoryRepository(),
-    }),
-    [],
-  )
+    }
+  }, [])
 
   return <RepositoryContext.Provider value={repositories}>{children}</RepositoryContext.Provider>
 }

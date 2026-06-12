@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import type { PricingModel, Specialty } from '@/data/types'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { SPECIALTIES, SPECIALTY_LABELS, PRICING_LABELS } from '@/data/labels'
@@ -33,15 +34,22 @@ export function ProfileEditorPage() {
     setSpecialties((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]))
   }
 
+  const mutation = useMutation({
+    mutationFn: () =>
+      pilots.update(pilot.id, {
+        ...form,
+        startingPrice: Number(form.startingPrice) || 0,
+        specialties,
+      }),
+    onSuccess: () => {
+      refresh()
+      markSaved()
+    },
+  })
+
   function onSubmit(e: FormEvent) {
     e.preventDefault()
-    pilots.update(pilot.id, {
-      ...form,
-      startingPrice: Number(form.startingPrice) || 0,
-      specialties,
-    })
-    refresh()
-    markSaved()
+    mutation.mutate()
   }
 
   return (
@@ -125,7 +133,9 @@ export function ProfileEditorPage() {
       </Card>
 
       <div className="flex items-center gap-4">
-        <Button type="submit" variant="primary">Save changes</Button>
+        <Button type="submit" variant="primary" disabled={mutation.isPending}>
+          {mutation.isPending ? 'Saving…' : 'Save changes'}
+        </Button>
         <SavedBanner show={saved} />
       </div>
     </form>

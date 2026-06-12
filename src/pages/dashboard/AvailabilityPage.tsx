@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { Card } from '@/components/Card'
 import { Button } from '@/components/Button'
@@ -16,15 +17,22 @@ export function AvailabilityPage() {
   const [serviceAreaMiles, setServiceArea] = useState(pilot.serviceAreaMiles)
   const [responseTimeHours, setResponseTime] = useState(pilot.responseTimeHours)
 
+  const mutation = useMutation({
+    mutationFn: () =>
+      pilots.update(pilot.id, {
+        available,
+        serviceAreaMiles: Number(serviceAreaMiles) || 0,
+        responseTimeHours: Number(responseTimeHours) || 0,
+      }),
+    onSuccess: () => {
+      refresh()
+      markSaved()
+    },
+  })
+
   function onSubmit(e: FormEvent) {
     e.preventDefault()
-    pilots.update(pilot.id, {
-      available,
-      serviceAreaMiles: Number(serviceAreaMiles) || 0,
-      responseTimeHours: Number(responseTimeHours) || 0,
-    })
-    refresh()
-    markSaved()
+    mutation.mutate()
   }
 
   return (
@@ -48,14 +56,15 @@ export function AvailabilityPage() {
             aria-checked={available}
             onClick={() => setAvailable((v) => !v)}
             className={cn(
-              'relative h-7 w-12 shrink-0 rounded-full transition-colors',
+              'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
               available ? 'bg-verified-500' : 'bg-white/15',
             )}
           >
             <span
+              aria-hidden="true"
               className={cn(
-                'absolute top-1 h-5 w-5 rounded-full bg-white transition-transform',
-                available ? 'translate-x-6' : 'translate-x-1',
+                'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out',
+                available ? 'translate-x-5' : 'translate-x-0',
               )}
             />
           </button>
@@ -81,7 +90,9 @@ export function AvailabilityPage() {
       </Card>
 
       <div className="flex items-center gap-4">
-        <Button type="submit" variant="primary">Save changes</Button>
+        <Button type="submit" variant="primary" disabled={mutation.isPending}>
+          {mutation.isPending ? 'Saving…' : 'Save changes'}
+        </Button>
         <SavedBanner show={saved} />
       </div>
     </form>

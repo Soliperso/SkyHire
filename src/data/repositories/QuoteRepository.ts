@@ -11,10 +11,12 @@ export interface NewQuoteRequest {
 }
 
 export interface QuoteRepository {
-  list(): QuoteRequest[]
+  list(): Promise<QuoteRequest[]>
   /** Leads addressed to a specific pilot (newest first) — the pilot's Leads inbox. */
-  listForPilot(pilotId: string): QuoteRequest[]
-  add(request: NewQuoteRequest): QuoteRequest
+  listForPilot(pilotId: string): Promise<QuoteRequest[]>
+  /** A client's own quote requests (newest first) — their job history. */
+  listForClient(clientEmail: string): Promise<QuoteRequest[]>
+  add(request: NewQuoteRequest): Promise<QuoteRequest>
   /** Update a lead's status (e.g. pilot responds to or closes a lead). */
-  setStatus(id: string, status: QuoteRequest['status']): void
+  setStatus(id: string, status: QuoteRequest['status']): Promise<void>
 }

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Tray, Star, SealCheck, CalendarCheck } from '@phosphor-icons/react'
+import { useQuery } from '@tanstack/react-query'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { ROUTES } from '@/routes'
 import { Card } from '@/components/Card'
@@ -12,7 +13,10 @@ export function DashboardHomePage() {
   const { pilot } = useDashboard()
   const { quotes } = useRepositories()
 
-  const leads = quotes.listForPilot(pilot.id)
+  const { data: leads = [] } = useQuery({
+    queryKey: ['quotes', 'pilot', pilot.id],
+    queryFn: () => quotes.listForPilot(pilot.id),
+  })
   const newLeads = leads.filter((l) => l.status === 'new').length
 
   const stats = [

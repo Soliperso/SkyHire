@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { NavLink, Outlet, useOutletContext } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   SquaresFour,
   IdentificationCard,
@@ -42,13 +43,23 @@ const NAV = [
 export function DashboardLayout() {
   const { user } = useAuth()
   const { pilots } = useRepositories()
-  // Bump to force a re-read after in-place repository mutations.
-  const [version, setVersion] = useState(0)
-  const refresh = useCallback(() => setVersion((v) => v + 1), [])
+  const queryClient = useQueryClient()
 
-  const pilot = user?.pilotId ? pilots.getById(user.pilotId) : undefined
-  // `version` is intentionally read so this recomputes after refresh().
-  void version
+  const { data: pilot, isPending } = useQuery({
+    queryKey: ['pilots', 'byId', user?.pilotId],
+    queryFn: () => pilots.getById(user!.pilotId!),
+    enabled: Boolean(user?.pilotId),
+  })
+
+  // After a mutating action a section page calls refresh(); re-fetch active
+  // queries so the dashboard reflects the new state from the backend.
+  const refresh = useCallback(() => {
+    void queryClient.invalidateQueries()
+  }, [queryClient])
+
+  if (isPending) {
+    return <Container className="py-16 text-center text-body text-ink-400">Loading dashboard…</Container>
+  }
 
   if (!pilot) {
     return (

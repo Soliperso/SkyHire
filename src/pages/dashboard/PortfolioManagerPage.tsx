@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Trash, Plus } from '@phosphor-icons/react'
+import { useMutation } from '@tanstack/react-query'
 import type { PortfolioItem } from '@/data/types'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { Card } from '@/components/Card'
@@ -16,10 +17,16 @@ export function PortfolioManagerPage() {
 
   const [draft, setDraft] = useState({ imageUrl: '', caption: '' })
 
+  const mutation = useMutation({
+    mutationFn: (portfolio: PortfolioItem[]) => pilots.update(pilot.id, { portfolio }),
+    onSuccess: () => {
+      refresh()
+      markSaved()
+    },
+  })
+
   function persist(portfolio: PortfolioItem[]) {
-    pilots.update(pilot.id, { portfolio })
-    refresh()
-    markSaved()
+    mutation.mutate(portfolio)
   }
 
   function addItem(e: FormEvent) {

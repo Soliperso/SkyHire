@@ -9,11 +9,11 @@ export interface NewReview {
 }
 
 export interface ReviewRepository {
-  listForPilot(pilotId: string): Review[]
-  listPublished(): Review[]
+  listForPilot(pilotId: string): Promise<Review[]>
+  listPublished(): Promise<Review[]>
   /** Reviews needing moderation (flagged/spam) — admin queue. */
-  listFlagged(): Review[]
-  add(review: NewReview): Review
+  listFlagged(): Promise<Review[]>
+  add(review: NewReview): Promise<Review>
   /** Admin moderation decision (remove abusive/spam, or keep → publish). */
-  setStatus(id: string, status: ReviewStatus): void
+  setStatus(id: string, status: ReviewStatus): Promise<void>
 }

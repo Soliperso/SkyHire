@@ -1,6 +1,6 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SealCheck, Flag, Tray, ShieldWarning, Users } from '@phosphor-icons/react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { FaaVerification, Review } from '@/data/types'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { SPECIALTY_LABELS } from '@/data/labels'
@@ -15,23 +15,46 @@ import { AdminTable, Tr, Td } from '@/features/admin/AdminTable'
 
 export function AdminDashboardPage() {
   const { pilots, reviews, quotes, verifications } = useRepositories()
+  const queryClient = useQueryClient()
 
-  // Local mirrors so admin actions re-render (repos mutate in place).
-  const [pending, setPending] = useState<FaaVerification[]>(() => verifications.listPending())
-  const [flagged, setFlagged] = useState<Review[]>(() => reviews.listFlagged())
-  const leads = quotes.list()
-  const allPilots = pilots.list()
+  const { data: pending = [] } = useQuery({
+    queryKey: ['verifications', 'pending'],
+    queryFn: () => verifications.listPending(),
+  })
+  const { data: flagged = [] } = useQuery({
+    queryKey: ['reviews', 'flagged'],
+    queryFn: () => reviews.listFlagged(),
+  })
+  const { data: leads = [] } = useQuery({ queryKey: ['quotes', 'all'], queryFn: () => quotes.list() })
+  const { data: allPilots = [] } = useQuery({
+    queryKey: ['pilots', 'list', 'all'],
+    queryFn: () => pilots.list(),
+  })
+
+  const verifyMutation = useMutation({
+    mutationFn: async ({ v, status }: { v: FaaVerification; status: 'verified' | 'rejected' }) => {
+      await verifications.setStatus(v.id, status)
+      // Keep the pilot's public badge in sync with the decision.
+      await pilots.update(v.pilotId, { verificationStatus: status })
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['verifications'] })
+      void queryClient.invalidateQueries({ queryKey: ['pilots'] })
+    },
+  })
+
+  const moderateMutation = useMutation({
+    mutationFn: ({ r, status }: { r: Review; status: 'removed' | 'published' }) =>
+      reviews.setStatus(r.id, status),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['reviews'] }),
+  })
 
   function decideVerification(v: FaaVerification, status: 'verified' | 'rejected') {
-    verifications.setStatus(v.id, status)
-    // Keep the pilot's public badge in sync with the decision.
-    pilots.update(v.pilotId, { verificationStatus: status })
-    setPending((prev) => prev.filter((p) => p.id !== v.id))
+    verifyMutation.mutate({ v, status })
   }
 
   function moderateReview(r: Review, status: 'removed' | 'published') {
-    reviews.setStatus(r.id, status)
-    setFlagged((prev) => prev.filter((x) => x.id !== r.id))
+    moderateMutation.mutate({ r, status })
   }
 
   const stats = [

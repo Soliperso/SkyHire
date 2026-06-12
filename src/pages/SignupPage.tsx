@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { SignIn, Warning } from '@phosphor-icons/react'
+import { UserPlus, Warning } from '@phosphor-icons/react'
 import { useAuth } from '@/auth/AuthProvider'
-import { QUICK_ACCOUNTS, DEMO_PASSWORD, homeForRole } from '@/auth/accounts'
+import { homeForRole } from '@/auth/accounts'
 import { ROUTES } from '@/routes'
 import { Container } from '@/components/Container'
 import { Card } from '@/components/Card'
@@ -10,39 +10,32 @@ import { Button } from '@/components/Button'
 import { TextField } from '@/components/fields'
 import { Logo } from '@/components/Logo'
 
-const ROLE_LABEL: Record<string, string> = {
-  pilot: 'Pilot',
-  admin: 'Admin',
-  client: 'Client',
-}
-
-export function LoginPage() {
-  const { signIn } = useAuth()
+/** Client self-signup (PRD §10). Pilots/admins are provisioned out-of-band. */
+export function SignupPage() {
+  const { signUp } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const from = params.get('from')
 
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  async function attempt(withEmail: string, withPassword: string) {
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (!name.trim()) return setError('Please enter your name.')
+    if (password.length < 8) return setError('Password must be at least 8 characters.')
+    setError(null)
     setSubmitting(true)
-    const res = await signIn(withEmail, withPassword)
+    const res = await signUp(email, password, name)
     setSubmitting(false)
     if (!res.ok) {
       setError(res.error)
       return
     }
-    setError(null)
-    // Return the visitor to where they were headed, else their role's home.
     navigate(from ?? homeForRole(res.role), { replace: true })
-  }
-
-  function onSubmit(e: FormEvent) {
-    e.preventDefault()
-    attempt(email, password)
   }
 
   return (
@@ -51,13 +44,23 @@ export function LoginPage() {
         <div className="mb-8 flex flex-col items-center gap-4 text-center">
           <Logo variant="light" />
           <div>
-            <h1 className="text-h1 text-white">Welcome back</h1>
-            <p className="mt-1 text-body text-ink-400">Sign in to manage your pilot profile and leads.</p>
+            <h1 className="text-h1 text-white">Create your account</h1>
+            <p className="mt-1 text-body text-ink-400">
+              Find and hire verified drone pilots, and track your quote requests.
+            </p>
           </div>
         </div>
 
         <Card variant="elevated" className="p-6">
           <form onSubmit={onSubmit} className="flex flex-col gap-4">
+            <TextField
+              label="Name"
+              autoComplete="name"
+              placeholder="Jordan Mills"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
             <TextField
               label="Email"
               type="email"
@@ -70,8 +73,8 @@ export function LoginPage() {
             <TextField
               label="Password"
               type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
+              autoComplete="new-password"
+              placeholder="At least 8 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -85,39 +88,21 @@ export function LoginPage() {
             )}
 
             <Button type="submit" variant="primary" size="lg" className="mt-1 w-full" disabled={submitting}>
-              <SignIn weight="bold" className="h-5 w-5" /> {submitting ? 'Signing in…' : 'Sign in'}
+              <UserPlus weight="bold" className="h-5 w-5" /> {submitting ? 'Creating…' : 'Create account'}
             </Button>
           </form>
 
           <p className="mt-4 text-center text-body-sm text-ink-400">
-            New here?{' '}
-            <Link to={ROUTES.signup()} className="font-semibold text-accent-300 hover:text-accent-200">
-              Create a client account
+            Already have an account?{' '}
+            <Link to={ROUTES.login()} className="font-semibold text-accent-300 hover:text-accent-200">
+              Sign in
             </Link>
           </p>
         </Card>
 
-        <div className="mt-6">
-          <p className="mb-3 text-center text-caption font-semibold uppercase tracking-wide text-ink-400">
-            Or try a demo account
-          </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {QUICK_ACCOUNTS.map((account) => (
-              <button
-                key={account.id}
-                type="button"
-                disabled={submitting}
-                onClick={() => attempt(account.email, DEMO_PASSWORD)}
-                className="glass inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-body-sm font-medium text-white transition hover:bg-white/[0.18] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 disabled:opacity-50"
-              >
-                <span className="rounded-full bg-accent-500/20 px-2 py-0.5 text-caption font-semibold text-accent-300">
-                  {ROLE_LABEL[account.role]}
-                </span>
-                {account.name}
-              </button>
-            ))}
-          </div>
-        </div>
+        <p className="mt-6 text-center text-caption text-ink-500">
+          Are you a pilot? Contact us to get your profile set up.
+        </p>
       </div>
     </Container>
   )

@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { BadgeTone } from '@/components/Badge'
 import type { Role, User, UserStatus } from '@/data/types'
 import { useRepositories } from '@/data/RepositoryProvider'
@@ -25,18 +26,19 @@ const ROLE_FILTER_OPTIONS = [
 /** Account directory with status actions (PRD §8.6 — user management). */
 export function UserManagementPage() {
   const { users } = useRepositories()
-  const [version, setVersion] = useState(0)
+  const queryClient = useQueryClient()
   const [roleFilter, setRoleFilter] = useState<Role | 'all'>('all')
 
-  const rows = useMemo(() => {
-    void version // recompute after a status change
-    const all = users.list()
-    return roleFilter === 'all' ? all : all.filter((u) => u.role === roleFilter)
-  }, [users, roleFilter, version])
+  const { data: all = [] } = useQuery({ queryKey: ['users'], queryFn: () => users.list() })
+  const rows = roleFilter === 'all' ? all : all.filter((u) => u.role === roleFilter)
+
+  const statusMutation = useMutation({
+    mutationFn: ({ u, status }: { u: User; status: UserStatus }) => users.setStatus(u.id, status),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['users'] }),
+  })
 
   function setStatus(u: User, status: UserStatus) {
-    users.setStatus(u.id, status)
-    setVersion((v) => v + 1)
+    statusMutation.mutate({ u, status })
   }
 
   return (

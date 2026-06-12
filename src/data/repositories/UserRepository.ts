@@ -5,8 +5,8 @@ import type { User, UserStatus } from '../types'
  * this interface — a Supabase-backed impl swaps in without component changes.
  */
 export interface UserRepository {
-  list(): User[]
-  getById(id: string): User | undefined
+  list(): Promise<User[]>
+  getById(id: string): Promise<User | undefined>
   /** Admin sets account status (flag for review / suspend / reinstate). */
-  setStatus(id: string, status: UserStatus, reason?: string): User | undefined
+  setStatus(id: string, status: UserStatus, reason?: string): Promise<User | undefined>
 }

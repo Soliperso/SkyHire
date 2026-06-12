@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Heart } from '@phosphor-icons/react'
+import { useQuery } from '@tanstack/react-query'
+import type { PilotProfile } from '@/data/types'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { useSavedPilots } from '@/saved/SavedPilotsProvider'
 import { ROUTES } from '@/routes'
@@ -15,8 +17,16 @@ export function SavedPilotsPage() {
   const { ids } = useSavedPilots()
   const { pilots } = useRepositories()
 
+  const { data: allPilots = [] } = useQuery({
+    queryKey: ['pilots', 'list', 'all'],
+    queryFn: () => pilots.list(),
+  })
+
   // Preserve save order; drop any ids that no longer resolve to a pilot.
-  const saved = ids.map((id) => pilots.getById(id)).filter((p) => p !== undefined)
+  const byId = new Map(allPilots.map((p) => [p.id, p]))
+  const saved = ids
+    .map((id) => byId.get(id))
+    .filter((p): p is PilotProfile => p !== undefined)
 
   return (
     <Container className="py-10">

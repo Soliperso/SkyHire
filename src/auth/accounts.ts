@@ -48,14 +48,20 @@ const CLIENT_ACCOUNT: AuthUser = {
 
 export const DEMO_ACCOUNTS: AuthUser[] = [...PILOT_ACCOUNTS, ADMIN_ACCOUNT, CLIENT_ACCOUNT]
 
-/** A short, friendly set surfaced as quick-fill chips on the login page. */
-export const QUICK_ACCOUNTS: AuthUser[] = [PILOT_ACCOUNTS[0], ADMIN_ACCOUNT, CLIENT_ACCOUNT]
+/**
+ * Quick-fill chips on the login page. The admin account is intentionally
+ * excluded — the console is operator-only and gated behind VITE_ADMIN_PASSCODE,
+ * so we don't advertise it as a one-click demo login.
+ */
+export const QUICK_ACCOUNTS: AuthUser[] = [PILOT_ACCOUNTS[0], CLIENT_ACCOUNT]
 
-/** Mock credential check: any password works; the email must match a demo account. */
-export function findAccountByEmail(email: string): AuthUser | undefined {
-  const normalized = email.trim().toLowerCase()
-  return DEMO_ACCOUNTS.find((a) => a.email === normalized)
-}
+/**
+ * Shared password for the demo pilot/client accounts, used by the login
+ * quick-chips. These accounts are seeded as real Supabase Auth users (see
+ * scripts/seed-auth.mjs). The admin account is intentionally NOT a demo: it has
+ * a separate, private password and is excluded from the chips.
+ */
+export const DEMO_PASSWORD = 'skyhire-demo-2026'
 
 /** Where each role lands after signing in. */
 export function homeForRole(role: Role): string {

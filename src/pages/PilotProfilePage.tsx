@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { Clock, MapPin, Compass } from '@phosphor-icons/react'
+import { useQuery } from '@tanstack/react-query'
 import { useRepositories } from '@/data/RepositoryProvider'
 import { PRICING_LABELS, SPECIALTY_LABELS } from '@/data/labels'
 import { ROUTES } from '@/routes'
@@ -21,11 +22,21 @@ import { NotFoundPage } from './NotFoundPage'
 export function PilotProfilePage() {
   const { id = '' } = useParams()
   const { pilots, reviews } = useRepositories()
-  const pilot = pilots.getById(id)
+  const { data: pilot, isPending } = useQuery({
+    queryKey: ['pilots', 'byId', id],
+    queryFn: () => pilots.getById(id),
+    enabled: Boolean(id),
+  })
+  const { data: pilotReviews = [] } = useQuery({
+    queryKey: ['reviews', 'pilot', id],
+    queryFn: () => reviews.listForPilot(id),
+    enabled: Boolean(id),
+  })
 
+  if (isPending) {
+    return <Container className="py-24 text-center text-body text-ink-400">Loading pilot…</Container>
+  }
   if (!pilot) return <NotFoundPage />
-
-  const pilotReviews = reviews.listForPilot(pilot.id)
 
   return (
     <>

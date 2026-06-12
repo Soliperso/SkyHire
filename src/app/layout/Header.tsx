@@ -24,6 +24,7 @@ export function Header() {
     { label: 'How it works', to: ROUTES.howItWorks() },
     { label: 'Pricing', to: ROUTES.pricing() },
     { label: savedCount > 0 ? `Saved (${savedCount})` : 'Saved', to: ROUTES.saved() },
+    ...(user?.role === 'client' ? [{ label: 'Your requests', to: ROUTES.jobHistory() }] : []),
     ...(user?.role === 'admin' ? [{ label: 'Admin', to: ROUTES.admin() }] : []),
     ...(user?.role === 'pilot' ? [{ label: 'Dashboard', to: ROUTES.dashboard() }] : []),
   ]
@@ -38,8 +39,8 @@ export function Header() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  function handleSignOut() {
-    signOut()
+  async function handleSignOut() {
+    await signOut()
     setOpen(false)
     navigate(ROUTES.home())
   }
